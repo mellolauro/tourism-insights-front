@@ -1,25 +1,82 @@
+"use client";
+
+import { motion } from "framer-motion";
 import KPIGrid from "./components/KPIGrid";
 import VisitorsChart from "./components/VisitorsChart";
 import ForecastChart from "./components/ForecastChart";
-import { apiGet, apiPost } from "@/app/lib/api";
+import { apiGet } from "@/app/lib/api";
+import { KPI, VisitorsTimeseriesRow } from "@/app/lib/types";
+import { useEffect, useState } from "react";
 
-export default async function Dashboard() {
-  const kpis = await apiGet("/analytics/kpis/latest");
-  const visitors = await apiGet("/analytics/kpis/timeseries");
-  const forecast = await apiGet("/forecast/tourism?country=Argentina");
+export default function Dashboard() {
+  const [kpis, setKpis] = useState<KPI[]>([]);
+  const [visitors, setVisitors] = useState<VisitorsTimeseriesRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadAll() {
+      try {
+        const kpiData = await apiGet<KPI[]>("/kpis/latest");
+        const visitorData = await apiGet<VisitorsTimeseriesRow[]>("/kpis/timeseries");
+
+        setKpis(kpiData);
+        setVisitors(visitorData);
+      } catch (err: any) {
+        setError(err.message || "Erro ao carregar dados");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadAll();
+  }, []);
+
+  if (loading) {
+    return <p className="p-10">Carregando Dashboard...</p>;
+  }
+
+  if (error) {
+    return <p className="p-10 text-red-600 font-semibold">Erro: {error}</p>;
+  }
 
   return (
-    <main className="p-10 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold mb-8">Tourism Insights Dashboard</h1>
+    <motion.main
+      className="p-10 bg-gray-100 min-h-screen"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.7 }}
+    >
+      <motion.h1
+        className="text-3xl font-bold mb-8"
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        Tourism Insights Dashboard
+      </motion.h1>
 
-      {/* KPIs */}
-      <KPIGrid kpis={kpis} />
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: {
+            transition: { staggerChildren: 0.25 },
+          },
+        }}
+      >
+        <motion.div variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}>
+          <KPIGrid kpis={kpis} />
+        </motion.div>
 
-      {/* Visitantes por dia */}
-      <VisitorsChart data={visitors} />
+        <motion.div variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}>
+          <VisitorsChart data={visitors} />
+        </motion.div>
 
-      {/* Previsão Prophet */}
-      <ForecastChart data={forecast} />
-    </main>
+        <motion.div variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}>
+          <ForecastChart />
+        </motion.div>
+      </motion.div>
+    </motion.main>
   );
 }

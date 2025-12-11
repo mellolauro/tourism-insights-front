@@ -1,34 +1,38 @@
-export const API_BASE =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const isServer = typeof window === "undefined";
 
-/**
- * GET tipado
- */
-export async function apiGet<T>(path: string): Promise<T> {
-    const res = await fetch(`${API_BASE}${path}`, {
-    cache: "no-cache",
-    });
+function buildUrl(path: string) {
+    const cleanPath = path.replace(/^\//, "");
 
-    if (!res.ok) {
-    throw new Error(`Erro na API (${res.status}): ${res.statusText}`);
-    }
+    const base = isServer
+        ? process.env.INTERNAL_API_URL         // server side
+        : process.env.NEXT_PUBLIC_API_URL;     // client side
 
-    return res.json() as Promise<T>;
+    return `${base?.replace(/\/$/, "")}/${cleanPath}`;
 }
 
-/**
- * POST tipado
- */
-export async function apiPost<T, B = unknown>(path: string, body: B): Promise<T> {
-    const res = await fetch(`${API_BASE}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+export async function apiGet<T>(path: string): Promise<T> {
+    const url = buildUrl(path);
+    const res = await fetch(url);
+
+    if (!res.ok) {
+        throw new Error(`Erro na API (${res.status}): ${res.statusText}`);
+    }
+
+    return res.json();
+}
+
+export async function apiPost<T>(path: string, body: any): Promise<T> {
+    const url = buildUrl(path);
+
+    const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
     });
 
     if (!res.ok) {
-    throw new Error(`Erro na API (${res.status}): ${res.statusText}`);
+        throw new Error(`Erro na API (${res.status}): ${res.statusText}`);
     }
 
-    return res.json() as Promise<T>;
+    return res.json();
 }

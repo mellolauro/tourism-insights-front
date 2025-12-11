@@ -1,20 +1,136 @@
 "use client";
 
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { useEffect, useState } from "react";
+import { apiPost } from "@/app/lib/api";
+import { motion } from "framer-motion";
 
-export default function ForecastChart({ data }: any) {
+import {
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    Tooltip,
+    CartesianGrid,
+    Area,
+    Legend,
+    ResponsiveContainer
+} from "recharts";
+
+// Tipos necessários para evitar o erro do res unknown
+type HistoryItem = {
+    date: string;
+    value: number;
+};
+
+type ForecastItem = {
+    date: string;
+    value: number;
+    lower: number;
+    upper: number;
+};
+
+type ApiResponse = {
+    history: HistoryItem[];
+    forecast: ForecastItem[];
+};
+
+interface CombinedRow {
+    date: string;
+    history: number | null;
+    forecast: number | null;
+    lower: number | null;
+    upper: number | null;
+}
+
+export default function ForecastChart() {
+    const [data, setData] = useState<CombinedRow[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function load() {
+            const res: ApiResponse = await apiPost("/api/forecast", {
+                metric: "visitors",
+                periods: 30
+            });
+
+            const combined: CombinedRow[] = [
+                ...res.history.map((h) => ({
+                    date: h.date,
+                    history: h.value,
+                    forecast: null,
+                    lower: null,
+                    upper: null
+                })),
+                ...res.forecast.map((f) => ({
+                    date: f.date,
+                    history: null,
+                    forecast: f.value,
+                    lower: f.lower,
+                    upper: f.upper
+                }))
+            ];
+
+            setData(combined);
+            setLoading(false);
+        }
+        load();
+    }, []);
+
+    if (loading) return <p>Carregando previsão...</p>;
+
     return (
-        <div className="p-4 bg-white border rounded-xl shadow mt-6">
-            <h2 className="mb-4 text-xl font-semibold">Previsão (Prophet)</h2>
+        <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+            className="bg-white p-4 rounded-xl shadow-md"
+        >
+            <motion.h2
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-xl font-bold mb-4"
+            >
+                Previsão de Visitantes (30 dias)
+            </motion.h2>
 
-        <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={data}>
+            <LineChart width={900} height={400} data={data}>
+                <CartesianGrid strokeDasharray="3 3" />
+
                 <XAxis dataKey="date" />
                 <YAxis />
+
                 <Tooltip />
-                <Line type="monotone" dataKey="prediction" stroke="#059669" strokeWidth={3} />
+                <Legend />
+
+                {/* Faixa de incerteza */}
+                <Area
+                    type="monotone"
+                    dataKey="upper"
+                    stroke="none"
+                    fillOpacity={0.15}
+                    fill="#888"
+                />
+
+                {/* Linha histórica */}
+                <Line
+                    type="monotone"
+                    dataKey="history"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dot={false}
+                />
+
+                {/* Linha de forecast */}
+                <Line
+                    type="monotone"
+                    dataKey="forecast"
+                    stroke="#16a34a"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={false}
+                />
             </LineChart>
-        </ResponsiveContainer>
-    </div>
+        </motion.div>
     );
 }
