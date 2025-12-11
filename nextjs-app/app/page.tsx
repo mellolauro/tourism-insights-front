@@ -15,7 +15,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadAll() {
+    async function loadAll(): Promise<void> {
       try {
         const kpiData = await apiGet<KPI[]>("/kpis/latest");
         const visitorData = await apiGet<VisitorsTimeseriesRow[]>("/kpis/timeseries");

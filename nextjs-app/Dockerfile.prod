@@ -3,9 +3,16 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+# Adicione esta linha: Define um argumento de build
+# O valor padrão é um placeholder, o valor real virá do docker-compose
+ARG NEXT_PUBLIC_API_URL
+
+# Variável de ambiente final que o Next.js usará no build (CRUCIAL)
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Copia package.json e bloqueios
 COPY package*.json ./
-COPY package-lock.json .  
+COPY package-lock.json . 
 
 # Instala dependências
 RUN npm install
@@ -13,24 +20,6 @@ RUN npm install
 # Copia restante do projeto
 COPY . .
 
-# Build de produção
+# Build de produção (agora ele usa a ENV definida acima)
 RUN npm run build
-
-
-# ---------- STAGE 2: RUNNER ----------
-FROM node:22-alpine AS runner
-
-WORKDIR /app
-
-ENV NODE_ENV=production
-
-# Copia apenas o necessário do builder
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/node_modules ./node_modules
-
-# Porta que o Next usa
-EXPOSE 3000
-
-CMD ["npm", "start"]
+# ... (Restante do Dockerfile permanece igual)
