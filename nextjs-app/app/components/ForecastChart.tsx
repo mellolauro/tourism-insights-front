@@ -15,6 +15,7 @@ import {
     Legend,
     ResponsiveContainer
 } from "recharts";
+import { ForecastResponse } from "../lib/types";
 
 // Tipos necessários para evitar o erro do res unknown
 type HistoryItem = {
@@ -47,34 +48,43 @@ export default function ForecastChart() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        async function load() {
-            const res: ApiResponse = await apiPost("/api/forecast", {
-                metric: "visitors",
-                periods: 30
-            });
+    async function load() {
 
-            const combined: CombinedRow[] = [
-                ...res.history.map((h) => ({
-                    date: h.date,
-                    history: h.value,
-                    forecast: null,
-                    lower: null,
-                    upper: null
-                })),
-                ...res.forecast.map((f) => ({
-                    date: f.date,
-                    history: null,
-                    forecast: f.value,
-                    lower: f.lower,
-                    upper: f.upper
-                }))
-            ];
+        const res: ForecastResponse = await apiPost("/forecast", {
+            metric: "visitors",
+            periods: 30
+        });
 
-            setData(combined);
+        if (!res?.history || !res?.forecast) {
+            console.error("Resposta inesperada da API:", res);
+            setData([]);
             setLoading(false);
+            return;
         }
-        load();
-    }, []);
+
+        const combined = [
+            ...res.history.map(h => ({
+                date: h.date,
+                history: h.value,
+                forecast: null,
+                lower: null,
+                upper: null
+            })),
+            ...res.forecast.map(f => ({
+                date: f.date,
+                history: null,
+                forecast: f.value,
+                lower: f.lower,
+                upper: f.upper
+            }))
+        ];
+
+        setData(combined);
+        setLoading(false);
+    }
+
+    load();
+}, []);
 
     if (loading) return <p>Carregando previsão...</p>;
 

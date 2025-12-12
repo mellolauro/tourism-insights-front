@@ -4,7 +4,11 @@ import { motion } from "framer-motion";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { VisitorsTimeseriesRow } from "@/app/lib/types";
 
-export default function VisitorsChart({ data }: any) {
+type VisitorsChartProps = {
+    data: VisitorsTimeseriesRow[];
+};
+
+export default function VisitorsChart({ data }: VisitorsChartProps) {
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.97 }}

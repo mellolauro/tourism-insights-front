@@ -15,21 +15,26 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadAll(): Promise<void> {
-      try {
-        const kpiData = await apiGet<KPI[]>("/kpis/latest");
-        const visitorData = await apiGet<VisitorsTimeseriesRow[]>("/kpis/timeseries");
+  async function loadAll(): Promise<void> {
+    try {
+      const kpiData = await apiGet<KPI[]>("/kpis/latest");
+      const visitorData = await apiGet<VisitorsTimeseriesRow[]>("/kpis/timeseries");
+      console.log("visitorData (tipo) =>", Array.isArray(visitorData), visitorData);
 
-        setKpis(kpiData);
-        setVisitors(visitorData);
-      } catch (err: any) {
-        setError(err.message || "Erro ao carregar dados");
-      } finally {
-        setLoading(false);
-      }
+      console.log("kpiData =>", kpiData);
+      console.log("visitorData =>", visitorData);
+
+      setKpis(kpiData);
+      setVisitors(visitorData);
+    } catch (err: any) {
+      console.error("API ERROR =>", err);
+      setError(err.message || "Erro ao carregar dados");
+    } finally {
+      setLoading(false);
     }
-    loadAll();
-  }, []);
+  }
+  loadAll();
+}, []);
 
   if (loading) {
     return <p className="p-10">Carregando Dashboard...</p>;
