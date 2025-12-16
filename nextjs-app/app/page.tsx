@@ -12,7 +12,7 @@ export default function Dashboard() {
   const [kpis, setKpis] = useState<KPI[]>([]);
   const [visitors, setVisitors] = useState<VisitorsTimeseriesRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);Alterei 
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
   async function loadAll(): Promise<void> {
