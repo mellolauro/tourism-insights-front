@@ -12,12 +12,12 @@ export default function Dashboard() {
   const [kpis, setKpis] = useState<KPI[]>([]);
   const [visitors, setVisitors] = useState<VisitorsTimeseriesRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);Alterei 
 
   useEffect(() => {
   async function loadAll(): Promise<void> {
     try {
-      const kpiData = await apiGet<KPI[]>("/kpis/latest");
+      const kpiData = await apiGet<KPI[]>("/kpis/timeseries");
       const visitorData = await apiGet<VisitorsTimeseriesRow[]>("/kpis/timeseries");
       console.log("visitorData (tipo) =>", Array.isArray(visitorData), visitorData);
 

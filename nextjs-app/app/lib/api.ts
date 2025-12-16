@@ -22,27 +22,36 @@ function buildUrl(path: string) {
     return `${base.replace(/\/$/, "")}/${clean}`;
 }
 
+/* =========================
+    GET (SEM credentials)
+   ========================= */
 export async function apiGet<T>(path: string): Promise<T> {
-    const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+    const url = buildUrl(path);
 
-    const res = await fetch(`${base}${path}`, {
-    credentials: "include",
+    const res = await fetch(url, {
+        headers: {
+            "Content-Type": "application/json",
+        },
     });
 
     if (!res.ok) {
-    throw new Error(`API error: ${res.status} - ${res.statusText}`);
+        throw new Error(`API error: ${res.status} - ${res.statusText}`);
     }
 
-    const json = await res.json();
-    return json as T;
+    return res.json() as Promise<T>;
 }
 
+/* =========================
+    POST (SEM credentials)
+   ========================= */
 export async function apiPost<T>(path: string, body: any): Promise<T> {
     const url = buildUrl(path);
 
     const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+        },
         body: JSON.stringify(body),
     });
 
