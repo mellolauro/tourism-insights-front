@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Tourism Insights"
+  title: "Informações sobre turismo"
 };
 
 export default function RootLayout({ children }: any) {

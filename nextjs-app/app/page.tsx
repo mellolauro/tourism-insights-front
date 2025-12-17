@@ -1,87 +1,93 @@
 "use client";
 
-import { motion } from "framer-motion";
-import KPIGrid from "./components/KPIGrid";
-import VisitorsChart from "./components/VisitorsChart";
-import ForecastChart from "./components/ForecastChart";
-import { apiGet } from "@/app/lib/api";
-import { KPI, VisitorsTimeseriesRow } from "@/app/lib/types";
 import { useEffect, useState } from "react";
+import {
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    Tooltip,
+    ResponsiveContainer,
+    CartesianGrid,
+} from "recharts";
 
-export default function Dashboard() {
-  const [kpis, setKpis] = useState<KPI[]>([]);
-  const [visitors, setVisitors] = useState<VisitorsTimeseriesRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+import {
+    getVisitorsTimeseries,
+    VisitorsTimeseriesRow,
+} from "./lib/api";
 
-  useEffect(() => {
-  async function loadAll(): Promise<void> {
-    try {
-      const kpiData = await apiGet<KPI[]>("/kpis/timeseries");
-      const visitorData = await apiGet<VisitorsTimeseriesRow[]>("/kpis/timeseries");
-      console.log("visitorData (tipo) =>", Array.isArray(visitorData), visitorData);
+export default function DashboardPage() {
+    const [months, setMonths] = useState<number>(12);
+    const [data, setData] = useState<VisitorsTimeseriesRow[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
 
-      console.log("kpiData =>", kpiData);
-      console.log("visitorData =>", visitorData);
+    useEffect(() => {
+        async function load() {
+            try {
+                setLoading(true);
+                setError(null);
 
-      setKpis(kpiData);
-      setVisitors(visitorData);
-    } catch (err: any) {
-      console.error("API ERROR =>", err);
-      setError(err.message || "Erro ao carregar dados");
-    } finally {
-      setLoading(false);
-    }
-  }
-  loadAll();
-}, []);
+                const result = await getVisitorsTimeseries(months);
 
-  if (loading) {
-    return <p className="p-10">Carregando Dashboard...</p>;
-  }
+                // Proteção contra payload inválido
+                if (!Array.isArray(result)) {
+                    throw new Error("Formato de dados inválido da API");
+                }
 
-  if (error) {
-    return <p className="p-10 text-red-600 font-semibold">Erro: {error}</p>;
-  }
+                setData(result);
+            } catch (err: any) {
+                setError(err.message || "Erro ao carregar dados");
+            } finally {
+                setLoading(false);
+            }
+        }
 
-  return (
-    <motion.main
-      className="p-10 bg-gray-100 min-h-screen"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.7 }}
-    >
-      <motion.h1
-        className="text-3xl font-bold mb-8"
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        Tourism Insights Dashboard
-      </motion.h1>
+        load();
+    }, [months]);
 
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={{
-          hidden: {},
-          visible: {
-            transition: { staggerChildren: 0.25 },
-          },
-        }}
-      >
-        <motion.div variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}>
-          <KPIGrid kpis={kpis} />
-        </motion.div>
+    return (
+        <div style={{ padding: 24 }}>
+            <h1 style={{ fontSize: 24, marginBottom: 16 }}>
+                Tourism Insights Dashboard
+            </h1>
 
-        <motion.div variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}>
-          <VisitorsChart data={visitors} />
-        </motion.div>
+            {/* ===== Seletor de período ===== */}
+            <div style={{ marginBottom: 16 }}>
+                <label style={{ marginRight: 8 }}>
+                    Período:
+                </label>
+                <select
+                    value={months}
+                    onChange={(e) => setMonths(Number(e.target.value))}
+                >
+                    <option value={6}>Últimos 6 meses</option>
+                    <option value={12}>Últimos 12 meses</option>
+                    <option value={24}>Últimos 24 meses</option>
+                    <option value={36}>Últimos 36 meses</option>
+                </select>
+            </div>
 
-        <motion.div variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0 } }}>
-          <ForecastChart />
-        </motion.div>
-      </motion.div>
-    </motion.main>
-  );
+            {/* ===== Estados ===== */}
+            {loading && <p>Carregando dados...</p>}
+            {error && <p style={{ color: "red" }}>Erro: {error}</p>}
+
+            {!loading && !error && (
+                <ResponsiveContainer width="100%" height={400}>
+                    <LineChart data={data}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip />
+                        <Line
+                            type="monotone"
+                            dataKey="visitors"
+                            strokeWidth={2}
+                            dot={false}
+                        />
+                    </LineChart>
+                </ResponsiveContainer>
+            )}
+        </div>
+    );
 }

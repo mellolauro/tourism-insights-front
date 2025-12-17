@@ -61,3 +61,14 @@ export async function apiPost<T>(path: string, body: any): Promise<T> {
 
     return res.json() as Promise<T>;
 }
+
+export interface VisitorsTimeseriesRow {
+    date: string;
+    visitors: number;
+}
+
+export function getVisitorsTimeseries(months = 12) {
+    return apiGet<VisitorsTimeseriesRow[]>(
+        `/kpis/timeseries?months=${months}`
+    );
+}
