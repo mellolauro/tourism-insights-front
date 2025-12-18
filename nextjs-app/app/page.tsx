@@ -49,7 +49,7 @@ export default function DashboardPage() {
     return (
         <div style={{ padding: 24 }}>
             <h1 style={{ fontSize: 24, marginBottom: 16 }}>
-                Tourism Insights Dashboard
+                Painel de Insights de Turismo
             </h1>
 
             {/* ===== Seletor de período ===== */}
